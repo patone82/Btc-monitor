@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111f">
+<title>BTC/USD Live Monitor</title>
+<script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{color-scheme:dark;--bg:#07111f;--panel:#0d1b2b;--line:#1b3046;--muted:#8ea5bd;--text:#edf5ff;--green:#20d6a0;--red:#ff647c;--blue:#56a7ff}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#07111f,#091626);color:var(--text);font:15px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+main{max-width:980px;margin:auto;padding:16px 13px 34px}.top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.brand{display:flex;align-items:center;gap:10px}.coin{background:#f7931a;color:#111;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:26px;font-weight:800}.title{font-size:22px;font-weight:800}.sub{color:var(--muted);font-size:12px;margin-top:3px}.live{font-size:12px;color:var(--green);display:flex;align-items:center;gap:6px}.dot{width:8px;height:8px;background:currentColor;border-radius:50%}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:17px 0}.metric,.panel{background:rgba(13,27,43,.94);border:1px solid var(--line);border-radius:15px;padding:13px}.label{font-size:12px;color:var(--muted)}.value{font-size:21px;font-weight:750;margin-top:6px;letter-spacing:-.4px}.small{font-size:12px;color:var(--muted);margin-top:4px}
+.tabs{display:flex;gap:7px;margin:12px 0;flex-wrap:wrap}.tabs button,button{background:#13273b;color:var(--text);border:1px solid #28435e;border-radius:10px;padding:10px 13px;font-weight:650}.tabs button.active{background:#16477b;border-color:#378de0}
+.chartbox{background:#0b1726;border:1px solid var(--line);border-radius:15px;overflow:hidden}.charthead{padding:13px 14px 0;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}.chart{height:340px;width:100%;margin-top:5px}.indicators{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:10px 0}.signal{font-weight:750;font-size:17px;margin-top:7px}.green{color:var(--green)}.red{color:var(--red)}.neutral{color:#ffd166}
+.levels{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.level{padding:10px;background:#0a1725;border:1px solid var(--line);border-radius:10px}.level strong{display:block;margin-top:5px}.row{display:flex;justify-content:space-between;gap:12px;margin:9px 0;color:var(--muted);font-size:13px}.row strong{color:var(--text)}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.controls label{display:block;color:var(--muted);font-size:12px}.controls input,.controls select{width:100%;margin-top:6px;padding:11px;border:1px solid #28435e;border-radius:9px;background:#081421;color:var(--text);font-size:16px}.wide{width:100%;margin-top:10px;background:#087f68;border-color:#14ad8f}.status{font-size:12px;color:var(--muted);line-height:1.5;margin:12px 2px}.error{color:#ff9aa9}.footer{font-size:11px;line-height:1.5;color:#8ea5bd;margin-top:17px}
+@media(min-width:700px){.metrics{grid-template-columns:repeat(4,minmax(0,1fr))}.value{font-size:24px}.chart{height:440px}.layout{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(260px,1fr);gap:12px}.indicators{grid-template-columns:1fr}.maincol{min-width:0}}
+@media(max-width:360px){.title{font-size:19px}.value{font-size:18px}.chart{height:300px}.metrics{gap:7px}.metric{padding:10px}}
+</style>
+</head>
+<body>
+<main>
+ <header class="top">
+  <div class="brand"><div class="coin">₿</div><div><div class="title">BTC/USD Monitor</div><div class="sub">Bitcoin · dollaro USA · candele M15</div></div></div>
+  <div class="live"><span class="dot"></span><span id="liveText">Connessione in corso…</span></div>
+ </header>
+ <section class="metrics">
+  <div class="metric"><div class="label">Prezzo BTC/USD</div><div class="value" id="price">—</div><div class="small" id="change">In attesa dei dati</div></div>
+  <div class="metric"><div class="label">Massimo visualizzato</div><div class="value" id="high">—</div><div class="small">Ultime candele caricate</div></div>
+  <div class="metric"><div class="label">Minimo visualizzato</div><div class="value" id="low">—</div><div class="small">Ultime candele caricate</div></div>
+  <div class="metric"><div class="label">RSI (14)</div><div class="value" id="rsi">—</div><div class="small" id="rsiNote">Indicatore di momentum</div></div>
+ </section>
+ <div class="tabs" id="timeTabs"><button data-min="5">M5</button><button data-min="15" class="active">M15</button><button data-min="60">H1</button><button data-min="240">H4</button></div>
+ <div class="layout">
+  <section class="maincol">
+   <div class="chartbox"><div class="charthead"><strong>Grafico a candele</strong><span class="small" id="updated">—</span></div><div id="chart" class="chart"></div></div>
+   <div class="indicators">
+    <div class="panel"><div class="label">Lettura EMA 20 / EMA 50</div><div class="signal neutral" id="trend">In attesa</div><div class="small" id="emaText">—</div></div>
+    <div class="panel"><div class="label">Possibile scenario (non è un ordine)</div><div class="signal neutral" id="scenario">In attesa dei dati</div><div class="small" id="scenarioText">Il mercato può invertire rapidamente.</div></div>
+   </div>
+  </section>
+  <aside>
+   <div class="panel"><strong>Livelli da osservare</strong><div class="small">Calcolati automaticamente sulle candele caricate, non sono previsioni.</div>
+    <div class="levels"><div class="level"><span class="label">Resistenza stimata</span><strong id="resistance">—</strong></div><div class="level"><span class="label">Supporto stimato</span><strong id="support">—</strong></div></div>
+   </div>
+   <div class="panel" style="margin-top:10px"><strong>Avviso di prezzo</strong><div class="controls">
+    <div><label for="alertPrice">Prezzo soglia (USD)</label><input id="alertPrice" type="number" step="50" placeholder="es. 82000"></div>
+    <div><label for="alertDirection">Avvisa quando</label><select id="alertDirection"><option value="above">Prezzo sale sopra</option><option value="below">Prezzo scende sotto</option></select></div>
+   </div><button class="wide" id="setAlert">Attiva avviso mentre la pagina è aperta</button><div class="small" id="alertStatus">Nessun avviso impostato.</div></div>
+   <div class="panel" style="margin-top:10px"><strong>Gestione del rischio</strong>
+    <div class="controls"><div><label for="capital">Capitale (USD)</label><input id="capital" type="number" min="0" value="1000"></div><div><label for="risk">Rischio per trade (%)</label><select id="risk"><option value=".5">0,5%</option><option value="1" selected>1%</option><option value="2">2%</option></select></div></div>
+    <div class="row"><span>Perdita massima pianificata</span><strong id="riskAmount">$10.00</strong></div>
+    <div class="small">Stima didattica: la quantità da comprare dipende anche dalla distanza dello stop, dalle commissioni e dallo slippage.</div>
+   </div>
+  </aside>
+ </div>
+ <div class="status" id="status">Caricamento dei dati pubblici…</div>
+ <div class="footer">Fonte dati: Coinbase Exchange API (BTC-USD). La quotazione può differire dal tuo broker e può subire ritardi o interruzioni. Questa pagina non esegue ordini, non garantisce segnali profittevoli e non è consulenza finanziaria. Gli avvisi funzionano solo mentre la pagina resta aperta e connessa; non sono notifiche garantite in background su iPhone.</div>
+</main>
+<script>
+(() => {
+ const $ = id => document.getElementById(id);
+ let interval = 15, chart, candleSeries, ema20Series, ema50Series, alertConfig = null, lastAlert = false;
+ const fmt = n => Number(n).toLocaleString('it-IT',{minimumFractionDigits:2,maximumFractionDigits:2});
+ const fmtPrice = n => '$' + fmt(n);
+ function setupChart(){
+  if(!window.LightweightCharts){$('status').textContent='Libreria grafico non caricata. Controlla la connessione Internet.';return}
+  chart=LightweightCharts.createChart($('chart'),{layout:{background:{color:'#0b1726'},textColor:'#9bb0c7'},grid:{vertLines:{color:'#14283c'},horzLines:{color:'#14283c'}},rightPriceScale:{borderColor:'#243b52'},timeScale:{borderColor:'#243b52',timeVisible:true,secondsVisible:false},crosshair:{mode:1},width:$('chart').clientWidth,height:$('chart').clientHeight});
+  candleSeries=chart.addCandlestickSeries({upColor:'#20d6a0',downColor:'#ff647c',borderUpColor:'#20d6a0',borderDownColor:'#ff647c',wickUpColor:'#20d6a0',wickDownColor:'#ff647c'});
+  ema20Series=chart.addLineSeries({color:'#56a7ff',lineWidth:2,priceLineVisible:false});
+  ema50Series=chart.addLineSeries({color:'#ffb547',lineWidth:2,priceLineVisible:false});
+  new ResizeObserver(()=>chart.applyOptions({width:$('chart').clientWidth,height:$('chart').clientHeight})).observe($('chart'));
+ }
+ function ema(values,span){let out=[],k=2/(span+1);values.forEach((v,i)=>out.push(i===0?v:v*k+out[i-1]*(1-k)));return out}
+ function calcRSI(closes){if(closes.length<15)return null;let gains=0,losses=0;for(let i=closes.length-14;i<closes.length;i++){let d=closes[i]-closes[i-1];if(d>0)gains+=d;else losses-=d}if(losses===0)return 100;return 100-100/(1+(gains/14)/(losses/14||1e-10))}
+ async function getJSON(url){let r=await fetch(url,{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);return r.json()}
+ async function refresh(){
+  try{
+   const [raw,ticker]=await Promise.all([
+    getJSON(`https://api.exchange.coinbase.com/products/BTC-USD/candles?granularity=${interval*60}`),
+    getJSON('https://api.exchange.coinbase.com/products/BTC-USD/ticker')
+   ]);
+   let rows=raw.slice(0,100).map(a=>({time:a[0],low:+a[1],high:+a[2],open:+a[3],close:+a[4],volume:+a[5]})).sort((a,b)=>a.time-b.time);
+   if(rows.length<5)throw new Error('Dati insufficienti al momento');
+   const closes=rows.map(r=>r.close), e20=ema(closes,20), e50=ema(closes,50);
+   const current=+ticker.price, prior=+rows[rows.length-2].close, pct=(current/prior-1)*100;
+   candleSeries.setData(rows.map(r=>({time:r.time,open:r.open,high:r.high,low:r.low,close:r.close})));
+   ema20Series.setData(rows.map((r,i)=>({time:r.time,value:e20[i]})));
+   ema50Series.setData(rows.map((r,i)=>({time:r.time,value:e50[i]})));
+   chart.timeScale().fitContent();
+   $('price').textContent=fmtPrice(current);$('change').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'% rispetto alla chiusura precedente';
+   $('change').className='small '+(pct>=0?'green':'red');
+   $('high').textContent=fmtPrice(Math.max(...rows.map(r=>r.high)));$('low').textContent=fmtPrice(Math.min(...rows.map(r=>r.low)));
+   let rsi=calcRSI(closes);$('rsi').textContent=rsi===null?'—':rsi.toFixed(1);$('rsiNote').textContent=rsi>70?'Momentum alto; non basta per vendere':rsi<30?'Momentum basso; non basta per comprare':'Zona intermedia';
+   const lastE20=e20[e20.length-1],lastE50=e50[e50.length-1];
+   let up=current>lastE20&&lastE20>lastE50, down=current<lastE20&&lastE20<lastE50;
+   $('trend').textContent=up?'Possibile bias rialzista':down?'Possibile bias ribassista':'Segnale misto / laterale';
+   $('trend').className='signal '+(up?'green':down?'red':'neutral');
+   $('emaText').textContent=`Prezzo ${current>lastE20?'sopra':'sotto'} EMA20 (${fmt(lastE20)}); EMA50 ${fmt(lastE50)}.`;
+   $('scenario').textContent=up?'Forza rialzista da confermare':down?'Pressione ribassista da confermare':'Attendere conferma';
+   $('scenario').className='signal '+(up?'green':down?'red':'neutral');
+   $('scenarioText').textContent='Valuta chiusura della candela e retest; evita ingressi basati su un solo indicatore.';
+   const recent=rows.slice(-20);$('resistance').textContent=fmtPrice(Math.max(...recent.map(r=>r.high)));$('support').textContent=fmtPrice(Math.min(...recent.map(r=>r.low)));
+   $('liveText').textContent='Dati aggiornati';$('updated').textContent='Aggiornato '+new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+   $('status').textContent=`Connessione OK · Coinbase BTC-USD · M${interval} · ${rows.length} candele · aggiornamento automatico ogni 30 secondi.`;
+   if(alertConfig){let hit=alertConfig.direction==='above'?current>=alertConfig.price:current<=alertConfig.price;if(hit&&!lastAlert){$('alertStatus').textContent='Soglia raggiunta: '+fmtPrice(current);try{if(navigator.vibrate)navigator.vibrate([180,100,180]);alert('BTC/USD ha raggiunto '+fmtPrice(current))}catch(e){}}lastAlert=hit;}
+  }catch(e){$('liveText').textContent='Connessione da verificare';$('liveText').style.color='var(--red)';$('status').innerHTML='<span class="error">Non riesco a recuperare i dati: '+String(e.message||e)+' . Riproverò automaticamente.</span>';}
+ }
+ $('timeTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-min]');if(!b)return;interval=+b.dataset.min;document.querySelectorAll('#timeTabs button').forEach(x=>x.classList.toggle('active',x===b));refresh()});
+ $('setAlert').addEventListener('click',()=>{let p=+$('alertPrice').value;if(!p||p<=0){$('alertStatus').textContent='Inserisci un prezzo valido.';return}alertConfig={price:p,direction:$('alertDirection').value};lastAlert=false;$('alertStatus').textContent='Avviso attivo: '+(alertConfig.direction==='above'?'sopra ':'sotto ')+fmtPrice(p)+' (pagina aperta).';});
+ function updateRisk(){let cap=Math.max(0,+$('capital').value||0),pct=+$('risk').value||1;$('riskAmount').textContent=fmtPrice(cap*pct/100)}
+ $('capital').addEventListener('input',updateRisk);$('risk').addEventListener('change',updateRisk);
+ setupChart();refresh();setInterval(refresh,30000);
+})();
+</script>
+</body>
+</html>
